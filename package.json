@@ -31,6 +31,10 @@
     "gramjs"
   ],
   "license": "MIT",
+  "author": {
+    "name": "CByBB",
+    "url": "https://github.com/CByBB"
+  },
   "engines": {
     "node": ">=20"
   },

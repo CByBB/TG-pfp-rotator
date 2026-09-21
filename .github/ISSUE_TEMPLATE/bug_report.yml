@@ -1,0 +1,44 @@
+name: Bug report
+description: Something is not working as expected
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include bot tokens, API hashes, session strings, or 2FA passwords.
+        Security issues go to [Security Advisories](https://github.com/CByBB/TG-pfp-rotator/security/advisories/new).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what did you see?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Git tag, commit, or `1.0.0`
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Node.js, and pnpm versions
+      placeholder: Windows 10, Node 20, pnpm 9
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste relevant logs. Redact secrets first.
+      render: text

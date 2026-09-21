@@ -1,10 +1,16 @@
 # Telegram Profile Photo Rotator
 
+[![CI](https://github.com/CByBB/TG-pfp-rotator/actions/workflows/ci.yml/badge.svg)](https://github.com/CByBB/TG-pfp-rotator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
+
 Public repo: [https://github.com/CByBB/TG-pfp-rotator](https://github.com/CByBB/TG-pfp-rotator)
 
 A multi-user Telegram bot that asks for your phone number, logs into that account, and rotates your profile photo through a gallery you upload. Images are cropped and resized to a square before they are saved. There is no database — each user is stored as files under `data/`.
 
 Donate: [https://nowpayments.io/donation/CodeByBB](https://nowpayments.io/donation/CodeByBB)
+
+[Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Support](SUPPORT.md) · [Changelog](CHANGELOG.md)
 
 ## Features
 
@@ -115,6 +121,15 @@ Whoever hosts this bot can use the saved sessions to act as the connected Telegr
 
 Userbots can conflict with Telegram’s terms. Use this at your own risk, especially with very short intervals.
 
+See [SECURITY.md](SECURITY.md) to report a vulnerability. Never commit `.env` or `data/`.
+
+## Community
+
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Support](SUPPORT.md)
+- [Changelog](CHANGELOG.md)
+
 ## License
 
-MIT
+[MIT](LICENSE) © 2026 CByBB / CodeByBB
