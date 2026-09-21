@@ -1,0 +1,66 @@
+{
+  "name": "tg-pfp-rotator",
+  "version": "1.0.0",
+  "description": "Multi-user Telegram bot that logs into your account and rotates profile photos from a personal gallery.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CByBB/TG-pfp-rotator.git"
+  },
+  "homepage": "https://github.com/CByBB/TG-pfp-rotator",
+  "bugs": {
+    "url": "https://github.com/CByBB/TG-pfp-rotator/issues"
+  },
+  "keywords": [
+    "telegram",
+    "userbot",
+    "profile-photo",
+    "grammy",
+    "gramjs"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "big-integer": "^1.6.52",
+    "dotenv": "^16.4.7",
+    "grammy": "^1.35.0",
+    "sharp": "^0.33.5",
+    "telegram": "^2.26.22"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
+  }
+}
