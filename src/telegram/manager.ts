@@ -135,8 +135,12 @@ export class ClientManager {
         file: new CustomFile(path.basename(imagePath), fileStat.size, imagePath),
         workers: 1,
       });
-      await client.invoke(new Api.photos.UploadProfilePhoto({ file: uploaded }));
-      await this.deleteOlderProfilePhotos(client);
+      const isVideo = path.extname(imagePath).toLowerCase() === '.mp4';
+      const result = await client.invoke(
+        new Api.photos.UploadProfilePhoto(isVideo ? { video: uploaded } : { file: uploaded }),
+      );
+      const keepId = result.photo instanceof Api.Photo ? result.photo.id : undefined;
+      await this.deleteOlderProfilePhotos(client, keepId);
     });
   }
 
@@ -210,7 +214,10 @@ export class ClientManager {
     await this.store.update(userId, { phoneCodeHash: undefined });
   }
 
-  private async deleteOlderProfilePhotos(client: TelegramClient): Promise<void> {
+  private async deleteOlderProfilePhotos(
+    client: TelegramClient,
+    keepId?: bigInt.BigInteger,
+  ): Promise<void> {
     try {
       const photos = await client.invoke(
         new Api.photos.GetUserPhotos({
@@ -220,17 +227,20 @@ export class ClientManager {
           limit: 8,
         }),
       );
-      const extras = photos.photos.slice(1).flatMap((photo) => {
-        if (photo instanceof Api.Photo) {
-          return [
-            new Api.InputPhoto({
-              id: photo.id,
-              accessHash: photo.accessHash,
-              fileReference: photo.fileReference,
-            }),
-          ];
+      const extras = photos.photos.flatMap((photo, index) => {
+        if (!(photo instanceof Api.Photo)) {
+          return [];
         }
-        return [];
+        if (keepId ? photo.id.eq(keepId) : index === 0) {
+          return [];
+        }
+        return [
+          new Api.InputPhoto({
+            id: photo.id,
+            accessHash: photo.accessHash,
+            fileReference: photo.fileReference,
+          }),
+        ];
       });
       if (extras.length > 0) {
         await client.invoke(new Api.photos.DeletePhotos({ id: extras }));

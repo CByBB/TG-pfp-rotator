@@ -1,5 +1,5 @@
 import type { Context } from 'grammy';
-import { replaceGallery, isSupportedImage } from '../images/process.js';
+import { isGifFile, isSupportedImage, isVideoFile, replaceGallery } from '../images/process.js';
 import { donateMessage, helpMessage, welcomeMessage } from '../texts.js';
 import { INTERVAL_OPTIONS, LOGIN_CODE_LENGTH, MAX_GALLERY_IMAGES } from '../types.js';
 import { formatInterval, normalizePhone } from '../utils.js';
@@ -41,7 +41,7 @@ export async function handleStart(app: App, ctx: Context): Promise<void> {
       reply_markup: removeKeyboard(),
     });
     await ctx.reply(
-      'You are already signed in. Send photos to update your set, or use the commands above.',
+      'You are already signed in. Send photos, GIFs, or videos to update your set, or use the commands above.',
     );
     return;
   }
@@ -126,7 +126,9 @@ export async function handleResume(app: App, ctx: Context): Promise<void> {
   await app.store.update(user.userId, { paused: false });
   app.rotator.start(user.userId);
   await ctx.reply(
-    `Rotation resumed. Next photos will change every ${formatInterval(user.intervalMs)}.`,
+    user.imageFiles.length < 2
+      ? 'You only have one photo, so there is nothing to rotate.'
+      : `Rotation resumed. Photos will change every ${formatInterval(user.intervalMs)}.`,
   );
 }
 
@@ -284,8 +286,8 @@ async function finishLogin(app: App, ctx: Context): Promise<void> {
     [
       'Login successful.',
       '',
-      'Now send the images you want as profile photos.',
-      'I will resize and crop each one to a square, save them, and start rotating.',
+      'Now send photos, GIFs, or videos to use as profile photos.',
+      'Stills are cropped to a square. GIFs and short videos become an animated profile photo.',
       'Sending a new batch later *replaces* the previous gallery.',
     ].join('\n'),
     { parse_mode: 'Markdown' },
@@ -327,13 +329,23 @@ export async function handleImage(app: App, ctx: Context): Promise<void> {
   }
 
   const photo = ctx.message?.photo?.at(-1);
+  const animation = ctx.message?.animation;
+  const video = ctx.message?.video;
   const document = ctx.message?.document;
-  const mime = document?.mime_type;
-  const fileName = document?.file_name;
-  const fileId = photo?.file_id ?? document?.file_id;
+  const mime = animation?.mime_type ?? video?.mime_type ?? document?.mime_type;
+  const fileName = animation?.file_name ?? video?.file_name ?? document?.file_name;
+  const fileId = photo?.file_id ?? animation?.file_id ?? video?.file_id ?? document?.file_id;
 
-  if (!fileId || (!photo && !isSupportedImage(mime, fileName))) {
-    await ctx.reply('Please send a photo or an image file (JPG, PNG, WebP).');
+  if (
+    !fileId ||
+    (!photo &&
+      !animation &&
+      !video &&
+      !isSupportedImage(mime, fileName) &&
+      !isGifFile(mime, fileName) &&
+      !isVideoFile(mime, fileName))
+  ) {
+    await ctx.reply('Please send a photo, GIF, video, or image file.');
     return;
   }
 
@@ -407,7 +419,7 @@ async function flushGallery(
     const files = await replaceGallery(app.store.imagesDir(userId), limited);
     const user = await app.store.replaceImages(userId, files);
     if (!user.paused) {
-      app.rotator.restart(userId);
+      app.rotator.applyAndStart(userId);
     }
     const extra =
       buffers.length > files.length
@@ -417,7 +429,9 @@ async function flushGallery(
       `Saved ${files.length} ${files.length === 1 ? 'photo' : 'photos'}.${extra}`,
       user.paused
         ? 'Rotation is paused. Send /resume to start.'
-        : `Rotation is running every ${formatInterval(user.intervalMs)}.`,
+        : files.length < 2
+          ? 'Only one photo is saved, so it will stay as your profile photo.'
+          : `Rotation is running every ${formatInterval(user.intervalMs)}.`,
     ].join('\n');
 
     if (progressMessageId && ctx.chat) {
@@ -468,6 +482,6 @@ export async function handleTextFallback(app: App, ctx: Context): Promise<void> 
   }
 
   await ctx.reply(
-    'Send photos to replace your gallery, or use /help, /interval, /pause, /resume, /status.',
+    'Send photos, GIFs, or videos to replace your gallery, or use /help, /interval, /pause, /resume, /status.',
   );
 }

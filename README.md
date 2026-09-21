@@ -18,7 +18,7 @@ Donate: [https://nowpayments.io/donation/CodeByBB](https://nowpayments.io/donati
 - After you share the number, the bot starts a user-account login and asks for the Telegram code
 - The code is entered with an inline number pad (tap digits one by one, backspace, confirm)
 - If the account has 2FA, the bot asks for the cloud password
-- Send photos or image files after login; they are resized/cropped and stored as your gallery
+- Send photos, GIFs, or image files after login; still images are cropped to a square, and animated GIFs become a video profile photo
 - Sending a new batch **clears the previous gallery** and keeps only the new images
 - Profile photos rotate on an interval you choose: 30 seconds, 1 minute, 5 minutes, … 1 day
 - `/pause` and `/resume` stop and start rotation

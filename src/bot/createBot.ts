@@ -55,7 +55,9 @@ export function createBot(app: App): Bot {
     }
   });
 
-  bot.on(['message:photo', 'message:document'], (ctx) => handleImage(app, ctx));
+  bot.on(['message:photo', 'message:document', 'message:animation', 'message:video'], (ctx) =>
+    handleImage(app, ctx),
+  );
   bot.on('message:text', (ctx) => handleTextFallback(app, ctx));
 
   bot.catch((error) => {

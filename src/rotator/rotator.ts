@@ -15,7 +15,7 @@ export class Rotator {
 
   startAll(): void {
     for (const user of this.store.listUsers()) {
-      if (!user.paused && user.imageFiles.length > 0) {
+      if (!user.paused && user.imageFiles.length > 1) {
         this.start(user.userId);
       }
     }
@@ -28,7 +28,29 @@ export class Rotator {
       return;
     }
 
+    if (user.imageFiles.length === 1) {
+      return;
+    }
+
     void this.tick(userId);
+    const timer = setInterval(() => {
+      void this.tick(userId);
+    }, user.intervalMs);
+    this.timers.set(userId, timer);
+  }
+
+  applyAndStart(userId: number): void {
+    this.stop(userId);
+    const user = this.store.get(userId);
+    if (!user || user.paused || user.imageFiles.length === 0) {
+      return;
+    }
+
+    void this.tick(userId);
+    if (user.imageFiles.length < 2) {
+      return;
+    }
+
     const timer = setInterval(() => {
       void this.tick(userId);
     }, user.intervalMs);
@@ -72,14 +94,15 @@ export class Rotator {
 
     try {
       await this.clients.setProfilePhoto(userId, imagePath);
-      const nextIndex = (user.currentIndex + 1) % user.imageFiles.length;
+      const nextIndex =
+        user.imageFiles.length < 2 ? 0 : (user.currentIndex + 1) % user.imageFiles.length;
       await this.store.update(userId, {
         currentIndex: nextIndex,
         lastRotatedAt: nowIso(),
       });
-      this.logger.info('Rotated profile photo', { userId, fileName });
+      this.logger.info('Updated profile photo', { userId, fileName });
     } catch (error) {
-      this.logger.error('Profile photo rotation failed', {
+      this.logger.error('Profile photo update failed', {
         userId,
         error: this.clients.describeSetPhotoError(error),
       });
