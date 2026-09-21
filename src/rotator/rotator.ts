@@ -2,6 +2,7 @@ import path from 'node:path';
 import type { Logger } from '../logger.js';
 import type { UserStore } from '../storage/store.js';
 import type { ClientManager } from '../telegram/manager.js';
+import { activeGallery } from '../types.js';
 import { nowIso } from '../utils.js';
 
 export class Rotator {
@@ -15,7 +16,7 @@ export class Rotator {
 
   startAll(): void {
     for (const user of this.store.listUsers()) {
-      if (!user.paused && user.imageFiles.length > 1) {
+      if (!user.paused && activeGallery(user).length > 1) {
         this.start(user.userId);
       }
     }
@@ -24,11 +25,12 @@ export class Rotator {
   start(userId: number): void {
     this.stop(userId);
     const user = this.store.get(userId);
-    if (!user || user.paused || user.imageFiles.length === 0) {
+    const files = user ? activeGallery(user) : [];
+    if (!user || user.paused || files.length === 0) {
       return;
     }
 
-    if (user.imageFiles.length === 1) {
+    if (files.length === 1) {
       return;
     }
 
@@ -42,12 +44,13 @@ export class Rotator {
   applyAndStart(userId: number): void {
     this.stop(userId);
     const user = this.store.get(userId);
-    if (!user || user.paused || user.imageFiles.length === 0) {
+    const files = user ? activeGallery(user) : [];
+    if (!user || user.paused || files.length === 0) {
       return;
     }
 
     void this.tick(userId);
-    if (user.imageFiles.length < 2) {
+    if (files.length < 2) {
       return;
     }
 
@@ -81,12 +84,13 @@ export class Rotator {
 
   private async tick(userId: number): Promise<void> {
     const user = this.store.get(userId);
-    if (!user || user.paused || user.imageFiles.length === 0) {
+    const files = user ? activeGallery(user) : [];
+    if (!user || user.paused || files.length === 0) {
       this.stop(userId);
       return;
     }
 
-    const fileName = user.imageFiles[user.currentIndex % user.imageFiles.length];
+    const fileName = files[user.currentIndex % files.length];
     if (!fileName) {
       return;
     }
@@ -94,8 +98,7 @@ export class Rotator {
 
     try {
       await this.clients.setProfilePhoto(userId, imagePath);
-      const nextIndex =
-        user.imageFiles.length < 2 ? 0 : (user.currentIndex + 1) % user.imageFiles.length;
+      const nextIndex = files.length < 2 ? 0 : (user.currentIndex + 1) % files.length;
       await this.store.update(userId, {
         currentIndex: nextIndex,
         lastRotatedAt: nowIso(),

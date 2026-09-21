@@ -14,6 +14,12 @@ import {
   handleStatus,
   handleTextFallback,
 } from './handlers.js';
+import {
+  handleBuyCallback,
+  handlePreCheckout,
+  handleSuccessfulPayment,
+  handleUpgrade,
+} from './payments.js';
 
 export const BOT_COMMANDS = [
   { command: 'start', description: 'Welcome and request phone access' },
@@ -22,6 +28,7 @@ export const BOT_COMMANDS = [
   { command: 'pause', description: 'Pause profile photo rotation' },
   { command: 'resume', description: 'Resume profile photo rotation' },
   { command: 'status', description: 'Show gallery and rotation state' },
+  { command: 'upgrade', description: 'Monthly Premium with Telegram Stars' },
   { command: 'donate', description: 'Donation and public repo links' },
 ] as const;
 
@@ -42,6 +49,7 @@ export function createBot(app: App): Bot {
   bot.command('interval', (ctx) => handleInterval(app, ctx));
   bot.command('pause', (ctx) => handlePause(app, ctx));
   bot.command('resume', (ctx) => handleResume(app, ctx));
+  bot.command('upgrade', (ctx) => handleUpgrade(app, ctx));
 
   bot.on('message:contact', (ctx) => handleContact(app, ctx));
   bot.on('callback_query:data', async (ctx) => {
@@ -52,9 +60,15 @@ export function createBot(app: App): Bot {
     }
     if (data.startsWith('interval:')) {
       await handleIntervalCallback(app, ctx);
+      return;
+    }
+    if (data.startsWith('buy:')) {
+      await handleBuyCallback(app, ctx);
     }
   });
 
+  bot.on('pre_checkout_query', (ctx) => handlePreCheckout(ctx));
+  bot.on('message:successful_payment', (ctx) => handleSuccessfulPayment(app, ctx));
   bot.on(['message:photo', 'message:document', 'message:animation', 'message:video'], (ctx) =>
     handleImage(app, ctx),
   );

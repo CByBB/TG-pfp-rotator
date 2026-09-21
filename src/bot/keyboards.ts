@@ -29,6 +29,10 @@ export function codeKeyboard(): InlineKeyboard {
     .text('✓', 'code:ok');
 }
 
+export function upgradeKeyboard(): InlineKeyboard {
+  return new InlineKeyboard().text('Premium · 100 Stars / month', 'buy:premium');
+}
+
 export function intervalKeyboard(): InlineKeyboard {
   const keyboard = new InlineKeyboard();
   INTERVAL_OPTIONS.forEach((option, index) => {

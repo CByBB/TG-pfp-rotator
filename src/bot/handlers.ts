@@ -1,7 +1,13 @@
 import type { Context } from 'grammy';
 import { isGifFile, isSupportedImage, isVideoFile, replaceGallery } from '../images/process.js';
 import { donateMessage, helpMessage, welcomeMessage } from '../texts.js';
-import { INTERVAL_OPTIONS, LOGIN_CODE_LENGTH, MAX_GALLERY_IMAGES } from '../types.js';
+import {
+  INTERVAL_OPTIONS,
+  LOGIN_CODE_LENGTH,
+  activeGallery,
+  galleryLimit,
+  isPremium,
+} from '../types.js';
 import { formatInterval, normalizePhone } from '../utils.js';
 import type { App } from './app.js';
 import { downloadFileById } from './download.js';
@@ -79,7 +85,8 @@ export async function handleStatus(app: App, ctx: Context): Promise<void> {
   const running = app.rotator.isRunning(user.userId);
   const lines = [
     `Logged in: ${loggedIn ? 'yes' : 'no'}`,
-    `Gallery: ${user.imageFiles.length} image(s)`,
+    `Gallery: ${user.imageFiles.length} / ${galleryLimit(user)}`,
+    `Plan: ${isPremium(user) ? `Premium until ${user.premiumUntil?.slice(0, 10)}` : 'Free'}`,
     `Interval: ${formatInterval(user.intervalMs)}`,
     `Rotation: ${user.paused ? 'paused' : running ? 'running' : 'idle'}`,
   ];
@@ -125,8 +132,9 @@ export async function handleResume(app: App, ctx: Context): Promise<void> {
   }
   await app.store.update(user.userId, { paused: false });
   app.rotator.start(user.userId);
+  const files = activeGallery(user);
   await ctx.reply(
-    user.imageFiles.length < 2
+    files.length < 2
       ? 'You only have one photo, so there is nothing to rotate.'
       : `Rotation resumed. Photos will change every ${formatInterval(user.intervalMs)}.`,
   );
@@ -383,7 +391,8 @@ async function ingestPhotoGroup(app: App, ctx: Context, fileIds: string[]): Prom
   }
 
   await app.collector.updateProgress(userId, async (count, messageId) => {
-    const text = collectingText(count, replacing);
+    const limit = galleryLimit(app.store.get(userId) ?? {});
+    const text = collectingText(count, replacing, limit);
     const chatId = ctx.chat?.id;
     if (!messageId) {
       const sent = await ctx.reply(text);
@@ -400,10 +409,12 @@ async function ingestPhotoGroup(app: App, ctx: Context, fileIds: string[]): Prom
   });
 }
 
-function collectingText(count: number, replacing: boolean): string {
+function collectingText(count: number, replacing: boolean, limit: number): string {
   const photos = count === 1 ? '1 photo' : `${count} photos`;
   const replaceNote = replacing ? ' These will replace your current set.' : '';
-  return `Received ${photos}.${replaceNote}\nSend more, or wait a moment to save.`;
+  const limitNote =
+    count > limit ? ` Only the first ${limit} will be saved. Use /upgrade for more.` : '';
+  return `Received ${photos}.${replaceNote}${limitNote}\nSend more, or wait a moment to save.`;
 }
 
 async function flushGallery(
@@ -413,7 +424,9 @@ async function flushGallery(
   progressMessageId?: number,
 ): Promise<void> {
   const userId = userIdOf(ctx);
-  const limited = buffers.slice(0, MAX_GALLERY_IMAGES);
+  const current = app.store.get(userId) ?? {};
+  const limit = galleryLimit(current);
+  const limited = buffers.slice(0, limit);
 
   try {
     const files = await replaceGallery(app.store.imagesDir(userId), limited);
@@ -423,7 +436,7 @@ async function flushGallery(
     }
     const extra =
       buffers.length > files.length
-        ? `\nKept ${files.length} of ${buffers.length} (limit is ${MAX_GALLERY_IMAGES}, unreadable files are skipped).`
+        ? `\nKept ${files.length} of ${buffers.length}. Your limit is ${limit}. Use /upgrade for more slots.`
         : '';
     const text = [
       `Saved ${files.length} ${files.length === 1 ? 'photo' : 'photos'}.${extra}`,
@@ -482,6 +495,6 @@ export async function handleTextFallback(app: App, ctx: Context): Promise<void> 
   }
 
   await ctx.reply(
-    'Send photos, GIFs, or videos to replace your gallery, or use /help, /interval, /pause, /resume, /status.',
+    'Send photos, GIFs, or videos to replace your gallery, or use /help, /interval, /upgrade, /pause, /resume, /status.',
   );
 }

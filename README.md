@@ -23,6 +23,7 @@ Donate: [https://nowpayments.io/donation/CodeByBB](https://nowpayments.io/donati
 - Profile photos rotate on an interval you choose: 30 seconds, 1 minute, 5 minutes, … 1 day
 - `/pause` and `/resume` stop and start rotation
 - Each chat has its own session, gallery, interval, and pause state
+- Free gallery limit is 5 images; `/upgrade` is monthly Premium (100 Stars / 30 days, up to 30 images)
 
 ## Requirements
 
@@ -73,6 +74,7 @@ pnpm start
 | `/pause`    | Pause rotation                                |
 | `/resume`   | Resume rotation                               |
 | `/status`   | Login, gallery size, interval, running/paused |
+| `/upgrade`  | Monthly Premium: 100 Stars, up to 30 images   |
 | `/donate`   | Donation page and public repository link      |
 
 Optional BotFather `/setcommands` list:
@@ -84,6 +86,7 @@ interval - Choose rotation speed
 pause - Pause profile photo rotation
 resume - Resume profile photo rotation
 status - Show gallery and rotation state
+upgrade - Monthly Premium with Stars
 donate - Donation and public repo links
 ```
 

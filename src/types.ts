@@ -10,6 +10,8 @@ export interface UserRecord {
   paused: boolean;
   currentIndex: number;
   imageFiles: string[];
+  premiumUntil?: string;
+  lastPaymentChargeId?: string;
   lastRotatedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -39,4 +41,24 @@ export const LOGIN_CODE_LENGTH = 5;
 export const PROFILE_PHOTO_SIZE = 640;
 export const PHOTO_BATCH_SETTLE_MS = 4_000;
 export const MEDIA_GROUP_SETTLE_MS = 1_200;
-export const MAX_GALLERY_IMAGES = 50;
+export const BASE_GALLERY_LIMIT = 5;
+export const PREMIUM_GALLERY_LIMIT = 30;
+export const PREMIUM_STARS = 100;
+export const PREMIUM_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+export const PREMIUM_PAYLOAD = 'premium:month';
+
+export function isPremium(user: Pick<UserRecord, 'premiumUntil'>): boolean {
+  if (!user.premiumUntil) {
+    return false;
+  }
+  const until = Date.parse(user.premiumUntil);
+  return Number.isFinite(until) && until > Date.now();
+}
+
+export function galleryLimit(user: Pick<UserRecord, 'premiumUntil'>): number {
+  return isPremium(user) ? PREMIUM_GALLERY_LIMIT : BASE_GALLERY_LIMIT;
+}
+
+export function activeGallery(user: Pick<UserRecord, 'imageFiles' | 'premiumUntil'>): string[] {
+  return user.imageFiles.slice(0, galleryLimit(user));
+}

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DEFAULT_INTERVAL_MS, type UserRecord } from '../types.js';
+import { DEFAULT_INTERVAL_MS, PREMIUM_DURATION_MS, type UserRecord } from '../types.js';
 import { nowIso } from '../utils.js';
 import {
   ensureDir,
@@ -108,6 +108,25 @@ export class UserStore {
     await removePath(this.sessionFile(userId));
   }
 
+  async activatePremium(
+    userId: number,
+    chargeId: string,
+    expirationUnix?: number,
+  ): Promise<UserRecord> {
+    const current = await this.getOrCreate(userId);
+    if (current.lastPaymentChargeId === chargeId) {
+      return current;
+    }
+    const now = Date.now();
+    const currentEnd = current.premiumUntil ? Date.parse(current.premiumUntil) : 0;
+    const base = Number.isFinite(currentEnd) && currentEnd > now ? currentEnd : now;
+    const until = expirationUnix ? expirationUnix * 1000 : base + PREMIUM_DURATION_MS;
+    return this.update(userId, {
+      premiumUntil: new Date(until).toISOString(),
+      lastPaymentChargeId: chargeId,
+    });
+  }
+
   async replaceImages(userId: number, files: string[]): Promise<UserRecord> {
     return this.update(userId, {
       imageFiles: files,
@@ -139,6 +158,7 @@ export class UserStore {
         paused: Boolean(parsed.paused),
         currentIndex: parsed.currentIndex || 0,
         imageFiles: parsed.imageFiles ?? [],
+        premiumUntil: parsed.premiumUntil,
       });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
